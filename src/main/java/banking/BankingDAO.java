@@ -20,21 +20,21 @@ public class BankingDAO {
 	 * @throws SQLException 
 	 */
 	public float balanceForCustomer(int id) throws SQLException {
-		float result = 0.0f;
+		float res = 0.0f;
 		String sql = "SELECT Total FROM Account WHERE CustomerID = ?";
 		try ( 	Connection myConnection = myDataSource.getConnection(); 
 			PreparedStatement statement = myConnection.prepareStatement(sql)) {
-			statement.setInt(1, id); // On fixe le 1° paramètre de la requête
+			statement.setInt(1, id); // 
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) { // est-ce qu'il y a un résultat ? (pas besoin de "while", il y a au plus un enregistrement)
 					// On récupère les champs de l'enregistrement courant
-					result = resultSet.getFloat("Total");
+					res = resultSet.getFloat("Total");
 				}
 			}
 		}
-		return result;
+		return res;
 	}
-	
+        
 	/**
 	 * Transfère amount € du compte du client fromID vers le compte du client toID
 	 * @param fromID l'ID du client à débiter
@@ -45,7 +45,11 @@ public class BankingDAO {
 	public void bankTransferTransaction(int fromID, int toID, float amount) throws Exception {
 		if (amount < 0)
 			throw new IllegalArgumentException("Le montant ne doit pas être négatif");
-	
+                
+                if(this.balanceForCustomer(fromID) < amount)
+                    throw new IllegalArgumentException("le solde doit être positif");
+                
+		// On calcule le résultat
 		String sql = "UPDATE Account SET Total = Total + ? WHERE CustomerID = ?";
 		try (	Connection myConnection = myDataSource.getConnection();
 			PreparedStatement statement = myConnection.prepareStatement(sql)) {
@@ -63,7 +67,7 @@ public class BankingDAO {
 				statement.setInt(2, toID);
 				numberUpdated = statement.executeUpdate();
 
-				// Tout s'est bien passé, on peut valider la transaction
+				
 				myConnection.commit();
 			} catch (Exception ex) {
 				myConnection.rollback(); // On annule la transaction
